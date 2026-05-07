@@ -64,7 +64,7 @@ app.delete("/movimientos/:id", async (req, res) => {
     }
 });
 
-/* ------------------ SERVIDOR ------------------ */
+
 app.listen(3000, () => {
     console.log("Servidor corriendo en puerto 3000");
 });

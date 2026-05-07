@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ControlGastos</title>
+</head>
+<body>
+
+    <h1>ControlGastos</h1>
+
+    <h2>Registrar gasto</h2>
+
+    <input type="number" id="monto" placeholder="Monto">
+    <input type="text" id="descripcion" placeholder="Descripción">
+    <input type="date" id="fecha">
+
+    <button onclick="guardarGasto()">Guardar</button>
+
+    <script>
+        async function guardarGasto() {
+            const monto = document.getElementById("monto").value;
+            const descripcion = document.getElementById("descripcion").value;
+            const fecha = document.getElementById("fecha").value;
+
+            await fetch("http://localhost:3000/movimientos", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    tipo: "gasto",
+                    monto,
+                    descripcion,
+                    fecha
+                })
+            });
+
+            alert("Gasto guardado");
+        }
+    </script>
+
+</body>
+</html>

@@ -6,7 +6,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
 /* ------------------ RUTA BASE ------------------ */
+
 app.get("/", (req, res) => {
     res.send("API ControlGastos funcionando");
 });
@@ -63,7 +65,6 @@ app.delete("/movimientos/:id", async (req, res) => {
         res.status(500).send("Error al eliminar");
     }
 });
-
 
 app.listen(3000, () => {
     console.log("Servidor corriendo en puerto 3000");

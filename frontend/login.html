@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - ControlGastos</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        button {
+            width: 95%;
+            padding: 10px;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-container">
+    <h1>ControlGastos</h1>
+
+    <input type="text" id="correo" placeholder="Correo">
+    <input type="password" id="password" placeholder="Contraseña">
+
+    <button onclick="login()">Iniciar sesión</button>
+</div>
+
+<script>
+async function login() {
+    const correo = document.getElementById("correo").value;
+    const contraseña = document.getElementById("password").value;
+
+    if (!correo || !contraseña) {
+        alert("Por favor completa todos los campos");
+        return;
+    }
+
+    try {
+        const res = await fetch("http://localhost:3000/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ correo, contraseña })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            localStorage.setItem("logueado", "true");
+
+            // redirigir al sistema
+            window.location.href = "index.html";
+        } else {
+            alert("Credenciales incorrectas");
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al conectar con el servidor");
+    }
+}
+</script>
+
+</body>
+</html>

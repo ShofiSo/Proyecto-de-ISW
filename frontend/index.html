@@ -2,61 +2,256 @@
 <html>
 <head>
     <title>ControlGastos</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+        }
+
+        input {
+            display: block;
+            margin: 10px auto;
+            padding: 8px;
+            width: 200px;
+        }
+
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 220px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-guardar {
+            background-color: green;
+        }
+
+        .btn-eliminar {
+            background-color: red;
+            margin-left: 10px;
+        }
+
+        .btn-logout {
+            background-color: black;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            max-width: 350px;
+            margin: auto;
+        }
+
+        li {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .resumen {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #grafica {
+            background: white;
+            padding: 15px;
+            margin: 10px auto;
+            width: 300px;
+        }
+
+        .barra {
+            height: 20px;
+            margin: 5px 0;
+            color: white;
+            padding-left: 5px;
+        }
+    </style>
 </head>
+
 <body>
 
-    <h1>ControlGastos</h1>
+<script>
+if (!localStorage.getItem("logueado")) {
+    window.location.href = "login.html";
+}
+</script>
 
-    <h2>Registrar gasto</h2>
+<h1>ControlGastos</h1>
 
-    <input type="number" id="monto" placeholder="Monto">
-    <input type="text" id="descripcion" placeholder="Descripción">
-    <input type="date" id="fecha">
+<button class="btn-logout" onclick="logout()">Cerrar sesión</button>
 
-    <button onclick="guardarGasto()">Guardar</button>
+<div class="resumen">
+    <h2>Resumen financiero</h2>
+    <p>Total ingresos: <span id="ingresos">Q0</span></p>
+    <p>Total gastos: <span id="gastos">Q0</span></p>
+</div>
 
-    <h2>Lista de gastos</h2>
-    <ul id="lista"></ul>
+<h2>Registrar gasto</h2>
 
+<input type="number" id="monto" placeholder="Monto">
+<input type="text" id="descripcion" placeholder="Categoría (ej: comida)">
+<input type="date" id="fecha">
 
-    <script>
-    async function guardarGasto() {
-        const monto = document.getElementById("monto").value;
-        const descripcion = document.getElementById("descripcion").value;
-        const fecha = document.getElementById("fecha").value;
+<button class="btn-guardar" onclick="guardarGasto()">Guardar</button>
 
-        await fetch("http://localhost:3000/movimientos", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                tipo: "gasto",
-                monto,
-                descripcion,
-                fecha
-            })
-        });
+<h2>Lista de gastos</h2>
+<ul id="lista"></ul>
 
-        cargarGastos();
+<h2>Reportes</h2>
+
+<div id="grafica"></div>
+
+<h3>Gastos por categoría</h3>
+<ul id="categorias"></ul>
+
+<script>
+
+function logout() {
+    localStorage.removeItem("logueado");
+    window.location.href = "login.html";
+}
+
+async function guardarGasto() {
+    const monto = Number(document.getElementById("monto").value);
+    const descripcion = document.getElementById("descripcion").value;
+    const fecha = document.getElementById("fecha").value;
+
+    if (monto > 1000) {
+        alert("Has superado el límite de gasto de Q1000");
     }
 
-    async function cargarGastos() {
-        const res = await fetch("http://localhost:3000/movimientos");
-        const data = await res.json();
+    await fetch("http://localhost:3000/movimientos", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            tipo: "gasto",
+            monto,
+            descripcion,
+            fecha
+        })
+    });
 
-        const lista = document.getElementById("lista");
-        lista.innerHTML = "";
-
-        data.forEach(gasto => {
-            const li = document.createElement("li");
-            li.textContent = gasto.descripcion + " - Q" + gasto.monto;
-            lista.appendChild(li);
-        });
-    }
+    document.getElementById("monto").value = "";
+    document.getElementById("descripcion").value = "";
+    document.getElementById("fecha").value = "";
 
     cargarGastos();
-    </script>
+    calcularTotales();
+    cargarReportes();
+}
+
+async function cargarGastos() {
+    const res = await fetch("http://localhost:3000/movimientos");
+    const data = await res.json();
+
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    data.forEach(gasto => {
+        const li = document.createElement("li");
+
+        const texto = document.createElement("span");
+        texto.textContent = gasto.descripcion + " - Q" + gasto.monto;
+
+        const btn = document.createElement("button");
+        btn.textContent = "Eliminar";
+        btn.className = "btn-eliminar";
+
+        btn.onclick = async () => {
+            await fetch(`http://localhost:3000/movimientos/${gasto.id}`, {
+                method: "DELETE"
+            });
+            cargarGastos();
+            calcularTotales();
+            cargarReportes();
+        };
+
+        li.appendChild(texto);
+        li.appendChild(btn);
+        lista.appendChild(li);
+    });
+}
+
+async function calcularTotales() {
+    const res = await fetch("http://localhost:3000/movimientos");
+    const data = await res.json();
+
+    let ingresos = 0;
+    let gastos = 0;
+
+    data.forEach(mov => {
+        if (mov.tipo === "ingreso") {
+            ingresos += Number(mov.monto);
+        } else {
+            gastos += Number(mov.monto);
+        }
+    });
+
+    document.getElementById("ingresos").textContent = "Q" + ingresos;
+    document.getElementById("gastos").textContent = "Q" + gastos;
+}
+
+async function cargarReportes() {
+    const res = await fetch("http://localhost:3000/movimientos");
+    const data = await res.json();
+
+    let categorias = {};
+
+    data.forEach(mov => {
+        if (mov.tipo === "gasto") {
+            const cat = mov.descripcion || "Otros";
+
+            if (!categorias[cat]) {
+                categorias[cat] = 0;
+            }
+
+            categorias[cat] += Number(mov.monto);
+        }
+    });
+
+    const lista = document.getElementById("categorias");
+    lista.innerHTML = "";
+
+    const grafica = document.getElementById("grafica");
+    grafica.innerHTML = "";
+
+    for (let cat in categorias) {
+        const li = document.createElement("li");
+        li.textContent = cat + " - Q" + categorias[cat];
+        lista.appendChild(li);
+
+        const barra = document.createElement("div");
+        barra.className = "barra";
+        barra.style.background = "green";
+        barra.style.width = categorias[cat] + "px";
+        barra.textContent = cat;
+
+        grafica.appendChild(barra);
+    }
+}
+
+// INICIALIZAR
+cargarGastos();
+calcularTotales();
+cargarReportes();
+
+</script>
 
 </body>
 </html>

@@ -15,27 +15,47 @@
 
     <button onclick="guardarGasto()">Guardar</button>
 
+    <h2>Lista de gastos</h2>
+    <ul id="lista"></ul>
+
+
     <script>
-        async function guardarGasto() {
-            const monto = document.getElementById("monto").value;
-            const descripcion = document.getElementById("descripcion").value;
-            const fecha = document.getElementById("fecha").value;
+    async function guardarGasto() {
+        const monto = document.getElementById("monto").value;
+        const descripcion = document.getElementById("descripcion").value;
+        const fecha = document.getElementById("fecha").value;
 
-            await fetch("http://localhost:3000/movimientos", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    tipo: "gasto",
-                    monto,
-                    descripcion,
-                    fecha
-                })
-            });
+        await fetch("http://localhost:3000/movimientos", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                tipo: "gasto",
+                monto,
+                descripcion,
+                fecha
+            })
+        });
 
-            alert("Gasto guardado");
-        }
+        cargarGastos();
+    }
+
+    async function cargarGastos() {
+        const res = await fetch("http://localhost:3000/movimientos");
+        const data = await res.json();
+
+        const lista = document.getElementById("lista");
+        lista.innerHTML = "";
+
+        data.forEach(gasto => {
+            const li = document.createElement("li");
+            li.textContent = gasto.descripcion + " - Q" + gasto.monto;
+            lista.appendChild(li);
+        });
+    }
+
+    cargarGastos();
     </script>
 
 </body>

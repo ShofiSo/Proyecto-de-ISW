@@ -8,8 +8,6 @@ app.use(express.json());
 
 
 /* ------------------ RUTA BASE ------------------ */
-
-/* ------------------ RUTA BASE ------------------ */
 app.get("/", (req, res) => {
     res.send("API ControlGastos funcionando");
 });
